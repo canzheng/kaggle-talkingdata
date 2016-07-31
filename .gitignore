@@ -1,0 +1,6 @@
+*.csv
+*.zip
+*.ipynb
+*.pdf
+*.hdf5
+*.pickle
