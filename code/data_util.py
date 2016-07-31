@@ -164,9 +164,10 @@ class DataUtil:
         print("Time: ", round(((time.time() - start_time)/60), 2))
         print('Complete vectorizing')
         if train_only:
-            return (train_dtm, test_dtm)
+            return train_dtm
         else:
-            test_dtm
+            return (train_dtm, test_dtm)
+            
 
     def get_y_train(self):
 
