@@ -9,6 +9,7 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import LabelEncoder
+from sklearn.feature_selection import VarianceThreshold
 from numpy import random
 import time
 
@@ -144,7 +145,7 @@ class DataUtil:
 
         print("Time: ", round(((time.time() - start_time) / 60), 2))
 
-    def vectorize_x(self, columns, train_only=False):
+    def vectorize_x(self, columns, variance_thresh=0, train_only=False):
 
         print('Start vectorizing')
         start_time = time.time()
@@ -156,10 +157,17 @@ class DataUtil:
 
         print('dtm train shape: ', train_dtm.shape)
 
+        selector = VarianceThreshold(variance_thresh)
+        train_dtm = selector.fit_transform(train_dtm)
+        print('dtm train shape after variance thresh: ', train_dtm.shape)
+
         if not train_only:
             test_dtm = hasher.transform(
                 self.ga_bm_test[columns].apply(lambda x: ','.join(x), axis=1))
+
             print('dtm test shape: ', test_dtm.shape)
+            test_dtm = selector.transform(test_dtm)
+            print('dtm test shape after variance thresh: ', test_dtm.shape)
 
         print("Time: ", round(((time.time() - start_time)/60), 2))
         print('Complete vectorizing')
