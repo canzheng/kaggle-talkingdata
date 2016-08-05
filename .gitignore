@@ -4,3 +4,9 @@
 *.pdf
 *.hdf5
 *.pickle
+*sublime*
+*pycache*
+*Backup*
+.DS_Store
+*temp*
+*.mtx

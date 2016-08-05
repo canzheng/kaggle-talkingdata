@@ -66,7 +66,7 @@ class DataUtil:
         bm_dev_cleaned = bm_dev.drop_duplicates(subset='device_id')
 
         bm_dev_cleaned.loc[
-            :, 'device_model'] = bm_dev_cleaned.phone_brand + bm_dev_cleaned.device_model
+            :, 'device_model'] = bm_dev_cleaned.phone_brand.str.cat(bm_dev_cleaned.device_model)
 
         brand_le = LabelEncoder()
         brand_code = pd.Series(
