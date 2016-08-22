@@ -12,9 +12,18 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_selection import VarianceThreshold
 from numpy import random
 import time
+from nltk import wordpunct_tokenize          
+from nltk.stem import WordNetLemmatizer
 
+cat_stop = ['nan', 'app', '),', 'application', 'based', 'category', 'unknown']
 
-class DataUtil:
+class LemmaTokenizer(object):
+    def __init__(self):
+        self.wnl = WordNetLemmatizer()
+    def __call__(self, doc):
+        return [self.wnl.lemmatize(t) for t in wordpunct_tokenize(doc) if (len(self.wnl.lemmatize(t)) > 1 and (self.wnl.lemmatize(t) not in cat_stop))]
+
+class DataLoader:
 
     def __init__(self, base_dir='../'):
         self.base_dir = base_dir
@@ -175,6 +184,36 @@ class DataUtil:
             return train_dtm
         else:
             return (train_dtm, test_dtm)
+
+    def vectorize_EX(self, columns, variance_thresh=0, train_only=False):
+
+        print('Start vectorizing')
+        start_time = time.time()
+        hasher = CountVectorizer(binary=True, tokenizer=LemmaTokenizer(), stop_words='english')
+
+        train_dtm = hasher.fit_transform(
+            self.ga_bm_train[columns].apply(lambda x: ','.join(x), axis=1))
+        print(hasher.get_feature_names())
+        print('dtm train shape: ', train_dtm.shape)
+
+        selector = VarianceThreshold(variance_thresh)
+        train_dtm = selector.fit_transform(train_dtm)
+        print('dtm train shape after variance thresh: ', train_dtm.shape)
+
+        if not train_only:
+            test_dtm = hasher.transform(
+                self.ga_bm_test[columns].apply(lambda x: ','.join(x), axis=1))
+
+            print('dtm test shape: ', test_dtm.shape)
+            test_dtm = selector.transform(test_dtm)
+            print('dtm test shape after variance thresh: ', test_dtm.shape)
+
+        print("Time: ", round(((time.time() - start_time)/60), 2))
+        print('Complete vectorizing')
+        if train_only:
+            return train_dtm
+        else:
+            return (train_dtm, test_dtm)
             
 
     def get_y_train(self):
@@ -192,7 +231,7 @@ class DataUtil:
 
 
 if __name__ == '__main__':
-    du = DataUtil()
+    du = DataLoader()
     du.load_data(sample_rate=0.05)
     train_dtm, test_dtm = du.vectorize_x(['brand_code', 'model_code', 'label_id_bag'])
     print('train set shape: ', train_dtm.shape)

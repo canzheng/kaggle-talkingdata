@@ -4,7 +4,8 @@
 # @Author  : Can Zheng (can.zheng@gmail.com)
 
 
-from data_util import DataUtil
+from data_load import DataLoader
+
 from model_util import coarse_to_fine_gs, xgb_estimator_fit
 from xgboost.sklearn import XGBClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -24,35 +25,37 @@ import pickle
 from scipy import io
 
 
-du = DataUtil()
+du = DataLoader()
 du.load_data(sub_sample=False)
-x_train, x_test = du.vectorize_x(['brand_code', 'model_code'])
+x_train, x_test = du.vectorize_x(['brand_code'])
 print('train set shape: ', x_train.shape)
 print('test set shape: ', x_test.shape)
-io.mmwrite("brand_model_train.mtx", x_train)
-io.mmwrite("brand_model_test.mtx", x_test)
+io.mmwrite("train_brand.mtx", x_train)
+io.mmwrite("test_brand.mtx", x_test)
 
-x_train, x_test = du.vectorize_x(['brand_code', 'model_code', 'label_id_bag'])
+x_train, x_test = du.vectorize_x(['model_code'])
 print('train set shape: ', x_train.shape)
 print('test set shape: ', x_test.shape)
-io.mmwrite("brand_model_label_train.mtx", x_train)
-io.mmwrite("brand_model_label_test.mtx", x_test)
+io.mmwrite("train_model.mtx", x_train)
+io.mmwrite("test_model.mtx", x_test)
 
-x_train, x_test = du.vectorize_x(['brand_code', 'model_code', 'app_id_bag'])
+
+x_train, x_test = du.vectorize_x(['label_id_bag'])
 print('train set shape: ', x_train.shape)
 print('test set shape: ', x_test.shape)
-io.mmwrite("brand_model_app_train.mtx", x_train)
-io.mmwrite("brand_model_app_test.mtx", x_test)
+io.mmwrite("train_label.mtx", x_train)
+io.mmwrite("test_label.mtx", x_test)
 
-x_train, x_test = du.vectorize_x(['brand_code', 'model_code', 'label_id_bag' 'app_id_bag'])
+x_train, x_test = du.vectorize_x(['app_id_bag'])
 print('train set shape: ', x_train.shape)
 print('test set shape: ', x_test.shape)
-io.mmwrite("brand_model_label_app_train.mtx", x_train)
-io.mmwrite("brand_model_label_app_test.mtx", x_test)
+io.mmwrite("train_appid.mtx", x_train)
+io.mmwrite("test_appid.mtx", x_test)
 
-y_train = du.get_y_train()
-print('y_train shape: ', y_train.shape)
 
-with open('ytrain.pickle', 'wb') as f:
-    pickle.dump(y_train, f, protocol=-1, fix_imports=False)
+#y_train = du.get_y_train()
+#print('y_train shape: ', y_train.shape)
+
+#with open('ytrain.pickle', 'wb') as f:
+#    pickle.dump(y_train, f, protocol=-1, fix_imports=False)
 print("done")
