@@ -221,7 +221,7 @@ class DataLoader:
         # prior to feed into XGB, encode the labels of the groups
 
         self.group_le = LabelEncoder()
-        return pd.Series(self.group_le.fit_transform(self.ga_bm_train.group))
+        return self.group_le.fit_transform(self.ga_bm_train.group)
 
     def export_prediction(self, pred, file_name):
         pred_df = pd.DataFrame(

@@ -32,23 +32,27 @@ def gen_folds(X, y, n_folds=5, random_state=0):
     return kfsplit
 
 
-def load_model(label, base_path='code/'):
+def load_model(label, base_path='model/'):
     with open(base_path + label + '.pickle', 'rb') as f:
         model_info = pickle.load(f)
     return model_info
 
 
-def save_model(model_info, base_path='code/'):
+def save_model(model_info, base_path='model/'):
     with open(base_path + model_info.label + '.pickle', 'wb') as f:
         y = pickle.dump(model_info, f, protocol=-1, fix_imports=False)
     return
 
 
-def load_y(base_path='code/'):
+def load_y(base_path='data/'):
     with open(base_path + 'ytrain.pickle', 'rb') as f:
-        y = pickle.load(f).values
+        y = pickle.load(f)
     return y
 
+def load_ev_ind_train(base_path='data/'):
+    with open(base_path + 'ind_withev_train.pickle', 'rb') as f:
+        ind = pickle.load(f)
+    return ind
 
 def assemble_data(parts):
     print('assemble data for ', parts)
@@ -74,7 +78,7 @@ def assemble_stack(model_labels):
     return csr_matrix(pred_oof), csr_matrix(pred_test)
 
 
-def load_data(label, prefix='train_', base_path='code/'):
+def load_data(label, prefix='train_', base_path='data/'):
     d = io.mmread(base_path + prefix + data_file[label]).tocsr()
     return d
 
@@ -88,16 +92,25 @@ def cv_predict(estimator, dtrain, dtest, kfsplit, y_train, mean_func, score_func
     print('Stacking for {} folds'.format(n_folds))
     pred_test = []
     pred_oof = None
-    cv_score = np.zeros(n_folds)
+    cv_score = np.zeros((n_folds, 3))
+    ev_ind = load_ev_ind_train()
+
     for f_idx, (itrain, itest) in enumerate(kfsplit):
         x_train_fold = dtrain[itrain, :]
         x_test_fold = dtrain[itest, :]
         y_train_fold = y_train[itrain]
         y_test_fold = y_train[itest]
+
+        test_ind_ev = ev_ind[itest]
+        test_ind_noev = np.logical_not(test_ind_ev)
+
+
         estimator.fit(x_train_fold, y_train_fold)
 
         pred = estimator.predict_proba(x_test_fold)
-        cv_score[f_idx] = score_func(y_test_fold, pred)
+        cv_score[f_idx, 0] = score_func(y_test_fold, pred)
+        cv_score[f_idx, 1] = score_func(y_test_fold[test_ind_ev], pred[test_ind_ev])
+        cv_score[f_idx, 2] = score_func(y_test_fold[test_ind_noev], pred[test_ind_noev])
         if predict:
             # initialize oof prediction array as (n_samples, n_classes)
             if pred_oof is None:
@@ -110,7 +123,11 @@ def cv_predict(estimator, dtrain, dtest, kfsplit, y_train, mean_func, score_func
         mean_pred_test = mean_func(np.stack(pred_test), axis=0)
 
     print('cv score: {}, mean={}, std={}'.format(
-        cv_score, cv_score.mean(), cv_score.std()))
+        cv_score[:, 0], cv_score[:, 0].mean(), cv_score[:, 0].std()))
+    print('cv score - w/ ev: {}, mean={}, std={}'.format(
+        cv_score[:, 1], cv_score[:, 1].mean(), cv_score[:, 1].std()))
+    print('cv score - w/o ev: {}, mean={}, std={}'.format(
+        cv_score[:, 2], cv_score[:, 2].mean(), cv_score[:, 2].std()))
 
     if predict:
         return cv_score, pred_oof, mean_pred_test
@@ -182,8 +199,12 @@ class ModelInfo(object):
 
         y_train = load_y()
         # get kfolds
+        # stratify using both y and event_indicator
+        ev_ind = load_ev_ind_train()
+
+        y_strat = np.core.defchararray.add(y_train.astype(str), ev_ind.astype(str))
         kfsplit = gen_folds(
-            x_train, y_train, n_folds=self.n_folds, random_state=self.kf_seed)
+            x_train, y_strat, n_folds=self.n_folds, random_state=self.kf_seed)
         cv_score, pred_oof, pred_test = cv_predict(self._get_estimator(), x_train, x_test, kfsplit, y_train,
                                                    mean_func=self.mean_func, score_func=self.score_func)
         if verify_only:
