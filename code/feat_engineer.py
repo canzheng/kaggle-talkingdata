@@ -80,7 +80,7 @@ def gen_app_freq(dev_app, ga_train, ga_test, base_dir='/data'):
 
     # freq of app appearing in events for each device (across all event data)
     app_freq = pd.DataFrame(np.divide(
-        app_ev_count.values, ev_count.values), index=app_ev_count.index, columns=app_ev_count.columns)
+        app_ev_count.values, ev_count.values), index=app_ev_count.index, columns=app_ev_count.columns).astype(np.float32)
 
 
 
