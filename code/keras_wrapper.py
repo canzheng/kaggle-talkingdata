@@ -77,7 +77,7 @@ class FlexInputKerasClassifier(KerasClassifier):
 
         self.classes_, y = np.unique(y, return_inverse=True)
         hist = super().fit(X, y, **kwargs)
-        print('best epoch: {}'.format(hist.history['val_loss'].argmin() + 1))
+        print('best epoch: {}'.format(np.array(hist.history['val_loss']).argmin() + 1))
         self.model = load_model(model_path)
         return hist
 
