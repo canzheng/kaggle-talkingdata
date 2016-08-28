@@ -63,7 +63,10 @@ class FlexInputKerasClassifier(KerasClassifier):
         # require validation_data is provided, and transform to categorical 
         validation_data = kwargs.pop('validation_data', None)
         if validation_data is not None:
-            validation_data = (validation_data[0].toarray(), np_utils.to_categorical(validation_data[1]))
+            if issparse(validation_data[0]):
+                validation_data = (validation_data[0].toarray(), np_utils.to_categorical(validation_data[1]))
+            else:
+                validation_data = (validation_data[0], np_utils.to_categorical(validation_data[1]))
 
         kwargs['callbacks'] = [earlystopping, checkpoint]
         kwargs['validation_data'] = validation_data
@@ -74,7 +77,7 @@ class FlexInputKerasClassifier(KerasClassifier):
 
         self.classes_, y = np.unique(y, return_inverse=True)
         hist = super().fit(X, y, **kwargs)
-        print('best epoch: {}'.format(hist['val_loss'].argmin() + 1))
+        print('best epoch: {}'.format(hist.history['val_loss'].argmin() + 1))
         self.model = load_model(model_path)
         return hist
 
