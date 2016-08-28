@@ -12,3 +12,6 @@
 *.mtx
 *.npy
 *.log
+model/
+data/
+nnet/

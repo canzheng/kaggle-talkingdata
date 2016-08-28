@@ -25,7 +25,7 @@ class LemmaTokenizer(object):
 
 class DataLoader:
 
-    def __init__(self, base_dir='../'):
+    def __init__(self, base_dir='./'):
         self.base_dir = base_dir
 
     def load_data(self, sub_sample=True, sample_rate=0.1, rand_seed=1999):

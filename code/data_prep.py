@@ -47,9 +47,9 @@ def gen_evind(base_dir='/data'):
     ind_withev = ga_train['device_id'].isin(ga_did).values
     ind_withev_test = ga_test['device_id'].isin(ga_did).values
 
-    with open(base_dir + 'ind_withev_train.pickle', 'wb') as f:
+    with open(base_dir + 'train_evind.pickle', 'wb') as f:
         pickle.dump(ind_withev, f, protocol=-1, fix_imports=False)
-    with open(base_dir + 'ind_withev_test.pickle', 'wb') as f:
+    with open(base_dir + 'test_evind.pickle', 'wb') as f:
         pickle.dump(ind_withev_test, f, protocol=-1, fix_imports=False)
 
 

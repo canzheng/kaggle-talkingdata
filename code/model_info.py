@@ -14,10 +14,11 @@ data_file = {
     'brand': 'brand.mtx',
     'model': 'model.mtx',
     'label': 'label.mtx',
-    'aid': 'appid.mtx',
+    'appid': 'appid.mtx',
     'term': 'term.mtx',
-    #'acount': 'appcount.mtx',
-    #'afreq': 'appfreq.mtx',
+    'appcount': 'appcount.mtx',
+    'appfreq': 'appfreq.mtx',
+    'apppopcount': 'apppopcount.mtx'
 }
 
 
@@ -49,8 +50,8 @@ def load_y(base_path='data/'):
         y = pickle.load(f)
     return y
 
-def load_ev_ind_train(base_path='data/'):
-    with open(base_path + 'ind_withev_train.pickle', 'rb') as f:
+def load_evind(base_path='data/', flag='train'):
+    with open(base_path + '{}_evind.pickle'.format(flag), 'rb') as f:
         ind = pickle.load(f)
     return ind
 
@@ -93,7 +94,7 @@ def cv_predict(estimator, dtrain, dtest, kfsplit, y_train, mean_func, score_func
     pred_test = []
     pred_oof = None
     cv_score = np.zeros((n_folds, 3))
-    ev_ind = load_ev_ind_train()
+    ev_ind = load_evind()
 
     for f_idx, (itrain, itest) in enumerate(kfsplit):
         x_train_fold = dtrain[itrain, :]
@@ -104,8 +105,11 @@ def cv_predict(estimator, dtrain, dtest, kfsplit, y_train, mean_func, score_func
         test_ind_ev = ev_ind[itest]
         test_ind_noev = np.logical_not(test_ind_ev)
 
-
-        estimator.fit(x_train_fold, y_train_fold)
+        try:
+            # see if the estimator accepts split_data
+            estimator.fit(x_train_fold, y_train_fold, validation_data=(x_test_fold, y_test_fold))
+        except:
+            estimator.fit(x_train_fold, y_train_fold)
 
         pred = estimator.predict_proba(x_test_fold)
         cv_score[f_idx, 0] = score_func(y_test_fold, pred)
@@ -200,7 +204,7 @@ class ModelInfo(object):
         y_train = load_y()
         # get kfolds
         # stratify using both y and event_indicator
-        ev_ind = load_ev_ind_train()
+        ev_ind = load_evind()
 
         y_strat = np.core.defchararray.add(y_train.astype(str), ev_ind.astype(str))
         kfsplit = gen_folds(
@@ -228,9 +232,12 @@ class ModelInfo(object):
 if __name__ == '__main__':
     # test model_info class
     from sklearn.linear_model import LogisticRegression
+    from keras_wrapper import FlexInputKerasClassifier, get_model
+    m = ModelInfo(clf=FlexInputKerasClassifier(build_fn=get_model, **{'nb_epoch':20}),
+                  data_parts=['brand', 'model', 'appid'], label='logreg_basic')
 
-    m = ModelInfo(clf=LogisticRegression(C=0.02, solver='lbfgs', multi_class='multinomial'),
-                  data_parts=['brand', 'model'], label='logreg_basic')
+#    m = ModelInfo(clf=FlexInputKeras(C=0.02, solver='lbfgs', multi_class='multinomial'),
+#                  data_parts=['brand', 'model'], label='logreg_basic')
     pred_oof, pred_test, cv_score = m.run()
     pred_oof.shape, pred_test.shape, cv_score.shape
 
