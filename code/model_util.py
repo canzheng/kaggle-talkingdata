@@ -3,14 +3,14 @@
 # @Date    : 2016-07-31 18:32:10
 # @Author  : Can Zheng (can.zheng@gmail.com)
 
-
+import numpy as np
 def xgb_estimator_fit(alg, dtrain, dtarget, metrics, useTrainCV=True, cv_folds=10, early_stopping_rounds=50):
     import xgboost as xgb
     from xgboost.sklearn import XGBClassifier
     if useTrainCV:
         xgb_param = alg.get_xgb_params()
-        xgtrain = xgb.DMatrix(dtrain, label=dtarget.values)
-        xgb_param['num_class'] = dtarget.nunique()
+        xgtrain = xgb.DMatrix(dtrain, label=dtarget)
+        xgb_param['num_class'] = np.unique(dtarget).shape[0]
 
         cvresult = xgb.cv(xgb_param, xgtrain, num_boost_round=alg.get_params()['n_estimators'], nfold=cv_folds,
                           metrics=[metrics], early_stopping_rounds=early_stopping_rounds)
