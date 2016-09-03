@@ -10,11 +10,17 @@ from scipy.stats import randint as sp_randint, uniform as sp_uniform
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 import time
 import pickle
-from model_info import assemble_data, load_y, gen_folds, ModelInfo, save_model, load_evind
+from model_info import assemble_data, load_y, gen_folds, ModelInfo, save_model, load_evind, assemble_stack
 import numpy as np
+
+from scipy.sparse import hstack, csr_matrix
+
+
 n_cv = 5
 #
 x_train, x_test = assemble_data(['brand', 'model', 'label', 'appid'])
+pbm_train, pbm_test = assemble_stack(['puredata_bm'])
+x_train = hstack([x_train, pbm_train], format='csr')
 y = load_y()
 evind = load_evind()
 
