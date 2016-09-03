@@ -51,35 +51,34 @@ print(xgb1.get_params())
 #m.run(ignore_no_events=True)
 #save_model(m)
 
-#param_dist = {"max_depth": sp_randint(10, 30),
-#              "min_child_weight": sp_randint(1, 10),
-#              "subsample": sp_uniform(0.4,0.6),
-#              "colsample_bytree": sp_uniform(0.4,0.6),
-#              "gamma":[0, 0.1, 0.2]
-#              }
-#
-## run randomized search
-# 
-#start = time.time()
-#n_iter_search = 20
-#random_search = RandomizedSearchCV(xgb1, param_distributions=param_dist, cv=kfsplit,
-#                                   n_iter=n_iter_search, scoring='log_loss',
-#                                   verbose=10, random_state=1)
-#random_search.fit(x_train, y)
-#print('Best param: ', random_search.best_params_)
-#print('Best score:', random_search.best_score_)
-#
-#
-#with open('xgb_cv.pickle', 'wb') as f: 
-#	pickle.dump(random_search, f)
-#
-#xgb1 = random_search.best_estimator_
-#xgb1.set_params({'learning_rate': 0.005, 'n_estimators': 10000})
-#print(xgb1)
-#
-#xgb_estimator_fit(xgb1, x_train, y_train, 'mlogloss', useTrainCV=True, cv_folds=n_cv, early_stopping_rounds=50)
-#
-#print('final model: ', xgb1)
-#
-#print('Time: ', (time.time() -start) / 60)
-#
+param_dist = {"max_depth": sp_randint(10, 30),
+              "min_child_weight": sp_randint(1, 10),
+              "subsample": sp_uniform(0.4,0.6),
+              "colsample_bytree": sp_uniform(0.4,0.6),
+              "gamma":[0, 0.1, 0.2]
+              }
+
+# run randomized search
+ 
+start = time.time()
+n_iter_search = 50
+random_search = RandomizedSearchCV(xgb1, param_distributions=param_dist, cv=kfsplit,
+                                   n_iter=n_iter_search, scoring='log_loss',
+                                   verbose=10, random_state=1)
+random_search.fit(x_train, y)
+print('Best param: ', random_search.best_params_)
+print('Best score:', random_search.best_score_)
+
+
+with open('xgb_cv.pickle', 'wb') as f: 
+	pickle.dump(random_search, f)
+
+xgb1 = random_search.best_estimator_
+xgb1.set_params({'learning_rate': 0.005, 'n_estimators': 10000})
+print(xgb1)
+
+xgb_estimator_fit(xgb1, x_train, y_train, 'mlogloss', useTrainCV=True, cv_folds=n_cv, early_stopping_rounds=50)
+
+print('final model: ', xgb1)
+
+print('Time: ', (time.time() -start) / 60)
