@@ -4,60 +4,47 @@
 # @Author  : Can Zheng (can.zheng@gmail.com)
 
 
-from data_util import DataUtil
-from model_util import coarse_to_fine_gs, xgb_estimator_fit
-from xgboost.sklearn import XGBClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 
 from scipy.stats import randint as sp_randint
+from model_info import assemble_data, load_y, gen_folds, ModelInfo, save_model
+import numpy as np
 
-import scipy.sparse as sp
 import pandas as pd
 import numpy as np
 import time
-import pickle
-
-du = DataUtil()
-du.load_data(sample_rate=0.05)
-x_train, x_test = du.vectorize_x(['brand_code', 'model_code', 'label_id_bag'])
-
-# xgb seems have issue detecting number of columns with sparse matrix
-#x_train = sp.hstack((x_train, sp.csr_matrix(np.ones((x_train.shape[0],1)))))
-
-
-
-
-print('train set shape: ', x_train.shape)
-print('test set shape: ', x_test.shape)
-y_train = du.get_y_train()
-print('y_train shape: ', y_train.shape)
 
 n_cv = 5
 
-rf1 = RandomForestClassifier(n_estimators=500, n_jobs=4, max_depth=15, criterion='gini', random_state=1)
+x_train, x_test = assemble_data(['brand', 'model'], base_path='../data/')
+y = load_y(base_path='../data/')
+print(x_train.shape, y.shape)
+
+
+kfsplit = gen_folds(
+            x_train, y, n_folds=n_cv, random_state=0)
+
+
+ext = ExtraTreesClassifier(n_estimators=500, n_jobs=4, max_depth=15, criterion='entropy', random_state=1)
 
 
 
-param_dist = {"max_depth": sp_randint(5, 50),
+param_dist = {"max_depth": sp_randint(5, 30),
               "max_features": [0.1, 0.01, 0.001, 'auto', 'log2'],
               "min_samples_split": sp_randint(1, 11),
-              "min_samples_leaf": sp_randint(1, 11),
-              "bootstrap": [True, False]              
+              "min_samples_leaf": sp_randint(1, 11)
               }
 
 # run randomized search
 # 
 start = time.time()
-n_iter_search = 20
-random_search = RandomizedSearchCV(rf1, param_distributions=param_dist,
+n_iter_search = 30
+random_search = RandomizedSearchCV(ext, param_distributions=param_dist,
                                    n_iter=n_iter_search, scoring='log_loss', cv=n_cv,
                                    verbose=10, random_state=1)
-random_search.fit(x_train, y_train)
+random_search.fit(x_train, y)
 print('Best param: ', random_search.best_params_)
 print('Best score:', random_search.best_score_)
-with open('rf_cv.pickle', 'wb') as f: 
-	pickle.dump(random_search, f)
-print('Time: ', (time.time() -start) / 60)
 
 

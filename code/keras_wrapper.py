@@ -23,6 +23,8 @@ def get_model(input_dim=100, l1_neurons=512, l2_neurons=512,
     from keras.layers.core import Dense, Dropout, Flatten
     from keras.callbacks import EarlyStopping, ModelCheckpoint
     from keras.regularizers import l2, activity_l2
+    from keras.optimizers import SGD
+
 
     model = Sequential()
     model.add(
@@ -31,7 +33,8 @@ def get_model(input_dim=100, l1_neurons=512, l2_neurons=512,
     model.add(Dense(l2_neurons, activation='relu', W_regularizer=l2(reg)))
     model.add(Dropout(dropout))
     model.add(Dense(output_dim, activation='softmax'))
-    model.compile(loss='categorical_crossentropy', optimizer='adadelta')
+    sgd = SGD(lr=0.01, decay=1e-4, momentum=0.9, nesterov=True)
+    model.compile(loss='categorical_crossentropy', optimizer='adagrad')
     return model
 
 def get_generator(X, y, batch_size, shuffle):

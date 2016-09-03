@@ -18,7 +18,8 @@ data_file = {
     'term': 'term.mtx',
     'appcount': 'appcount.mtx',
     'appfreq': 'appfreq.mtx',
-    'apppopcount': 'apppopcount.mtx'
+    'apppopcount': 'apppopcount.mtx',
+    'pbm': 'pbm.mtx'
 }
 
 
@@ -55,22 +56,22 @@ def load_evind(base_path='data/', flag='train'):
         ind = pickle.load(f)
     return ind
 
-def assemble_data(parts):
+def assemble_data(parts, base_path='data/'):
     print('assemble data for ', parts)
 
-    dtrain_parts = [load_data(p, prefix='train_') for p in parts]
+    dtrain_parts = [load_data(p, prefix='train_', base_path=base_path) for p in parts]
     dtrain = hstack(dtrain_parts, format='csr')
 
-    dtest_parts = [load_data(p, prefix='test_') for p in parts]
+    dtest_parts = [load_data(p, prefix='test_', base_path=base_path) for p in parts]
     dtest = hstack(dtest_parts, format='csr')
     print('train set data shape: ', dtrain.shape)
     print('test set data shape: ', dtest.shape)
     return dtrain, dtest
 
 
-def assemble_stack(model_labels):
+def assemble_stack(model_labels, base_path='model/'):
     print('assemble stack for ', model_labels)
-    stack_models = [load_model(label) for label in model_labels]
+    stack_models = [load_model(label, base_path=base_path) for label in model_labels]
     pred_oof = np.concatenate([m.pred_oof for m in stack_models], axis=1)
     pred_test = np.concatenate([m.pred_test for m in stack_models], axis=1)
     print('train set stack shape: ', pred_oof.shape)
@@ -142,7 +143,7 @@ def cv_predict(estimator, dtrain, dtest, kfsplit, y_train, mean_func, score_func
 class ModelInfo(object):
 
     def __init__(self, clf=None, clf_class=None, params=None, data_parts=[], stack=[],
-                 n_folds=5, kf_seed=0, mean_func=gmean, score_func=log_loss,
+                 n_folds=5, kf_seed=0, mean_func=mean, score_func=log_loss,
                  pred_oof=None, pred_test=None, cv_score=None, label=None):
         if clf is not None:
             self.clf_class = type(clf)
@@ -170,7 +171,7 @@ class ModelInfo(object):
     def _get_estimator(self):
         return self.clf_class(**self.params)
 
-    def __make_label():
+    def __make_label(self):
         from time import strftime
         # label is in below format:
         # <estimator>_<data_parts>_<S<num_of_stacked_models>>_postfix
@@ -181,7 +182,7 @@ class ModelInfo(object):
                                       strftime('%Y%m%d%H%M%S')
                                       )
 
-    def run(self, verify_only=False):
+    def run(self, verify_only=False, ignore_no_events=False):
         # prepare data
         train_list = []
         test_list = []
@@ -205,8 +206,13 @@ class ModelInfo(object):
         # get kfolds
         # stratify using both y and event_indicator
         ev_ind = load_evind()
+        if ignore_no_events:
+            x_train = x_train[ev_ind]
+            y_train = y_train[ev_ind]
+            y_strat = y_train
+        else:
+            y_strat = np.core.defchararray.add(y_train.astype(str), ev_ind.astype(str))
 
-        y_strat = np.core.defchararray.add(y_train.astype(str), ev_ind.astype(str))
         kfsplit = gen_folds(
             x_train, y_strat, n_folds=self.n_folds, random_state=self.kf_seed)
         cv_score, pred_oof, pred_test = cv_predict(self._get_estimator(), x_train, x_test, kfsplit, y_train,
