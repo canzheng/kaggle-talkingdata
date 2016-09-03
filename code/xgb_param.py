@@ -18,7 +18,7 @@ x_train, x_test = assemble_data(['brand', 'model', 'label', 'appid'])
 y = load_y()
 evind = load_evind()
 
-x_train = x_train[evind]
+x_train = x_train[evind].astype(np.float32).toarray()
 y = y[evind]
 print(x_train.shape, y.shape)
 #
@@ -51,25 +51,25 @@ print(xgb1.get_params())
 #m.run(ignore_no_events=True)
 #save_model(m)
 
-param_dist = {"max_depth": sp_randint(10, 30),
-              "min_child_weight": sp_randint(1, 10),
-              "subsample": sp_uniform(0.4,0.6),
-              "colsample_bytree": sp_uniform(0.4,0.6),
-              "gamma":[0, 0.1, 0.2]
-              }
-
-# run randomized search
- 
-start = time.time()
-n_iter_search = 20
-random_search = RandomizedSearchCV(xgb1, param_distributions=param_dist, cv=kfsplit,
-                                   n_iter=n_iter_search, scoring='log_loss',
-                                   verbose=10, random_state=1)
-random_search.fit(x_train, y)
-print('Best param: ', random_search.best_params_)
-print('Best score:', random_search.best_score_)
-
-
+#param_dist = {"max_depth": sp_randint(10, 30),
+#              "min_child_weight": sp_randint(1, 10),
+#              "subsample": sp_uniform(0.4,0.6),
+#              "colsample_bytree": sp_uniform(0.4,0.6),
+#              "gamma":[0, 0.1, 0.2]
+#              }
+#
+## run randomized search
+# 
+#start = time.time()
+#n_iter_search = 20
+#random_search = RandomizedSearchCV(xgb1, param_distributions=param_dist, cv=kfsplit,
+#                                   n_iter=n_iter_search, scoring='log_loss',
+#                                   verbose=10, random_state=1)
+#random_search.fit(x_train, y)
+#print('Best param: ', random_search.best_params_)
+#print('Best score:', random_search.best_score_)
+#
+#
 #with open('xgb_cv.pickle', 'wb') as f: 
 #	pickle.dump(random_search, f)
 #
